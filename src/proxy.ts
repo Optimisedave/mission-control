@@ -105,7 +105,11 @@ export function proxy(request: NextRequest) {
   }
 
   // Allow login page, auth API, and docs without session
-  if (pathname === '/login' || pathname.startsWith('/api/auth/') || pathname === '/api/docs' || pathname === '/docs') {
+  // Allow truly public endpoints without session validation.
+  // NOTE: /api/auth/me is intentionally excluded — it requires a valid session
+  // and must have the x-mc-redis-user header injected so getUserFromRequest works on cold starts.
+  const isPublicAuthRoute = pathname === '/api/auth/login' || pathname === '/api/auth/logout' || pathname.startsWith('/api/auth/google')
+  if (pathname === '/login' || isPublicAuthRoute || pathname === '/api/docs' || pathname === '/docs') {
     return applySecurityHeaders(NextResponse.next())
   }
 

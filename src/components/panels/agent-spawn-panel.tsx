@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useMissionControl } from '@/store'
 import { createClientLogger } from '@/lib/client-logger'
+import { GatewayEmptyState, useGatewayRequired } from '@/components/ui/gateway-empty-state'
 
 const log = createClientLogger('AgentSpawnPanel')
 
@@ -14,6 +15,7 @@ interface SpawnFormData {
 }
 
 export function AgentSpawnPanel() {
+  const gatewayRequired = useGatewayRequired()
   const { 
     availableModels, 
     spawnRequests, 
@@ -109,6 +111,8 @@ export function AgentSpawnPanel() {
   }
 
   const selectedModel = availableModels.find(m => m.alias === formData.model)
+
+  if (gatewayRequired) return <GatewayEmptyState panel="Spawn" description="Connect an OpenClaw gateway to spawn and manage sub-agents." />
 
   return (
     <div className="p-6 space-y-6">

@@ -5,6 +5,7 @@ import { useMissionControl, CronJob } from '@/store'
 import { createClientLogger } from '@/lib/client-logger'
 const log = createClientLogger('CronManagement')
 import { buildDayKey, getCronOccurrences } from '@/lib/cron-occurrences'
+import { GatewayEmptyState, useGatewayRequired } from '@/components/ui/gateway-empty-state'
 
 interface NewJobForm {
   name: string
@@ -51,6 +52,7 @@ function formatDateLabel(date: Date): string {
 }
 
 export function CronManagementPanel() {
+  const gatewayRequired = useGatewayRequired()
   const { cronJobs, setCronJobs, dashboardMode } = useMissionControl()
   const isLocalMode = dashboardMode === 'local'
   const [isLoading, setIsLoading] = useState(false)
@@ -468,6 +470,8 @@ export function CronManagementPanel() {
       : calendarView === 'week'
         ? `${formatDateLabel(weekDays[0])} - ${formatDateLabel(weekDays[6])}`
         : calendarDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+
+  if (gatewayRequired) return <GatewayEmptyState panel="Cron" description="Connect an OpenClaw gateway to manage and schedule cron jobs." />
 
   return (
     <div className="p-6 space-y-6">

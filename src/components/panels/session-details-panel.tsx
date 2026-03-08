@@ -4,10 +4,12 @@ import { useState, useCallback } from 'react'
 import { useMissionControl } from '@/store'
 import { useSmartPoll } from '@/lib/use-smart-poll'
 import { createClientLogger } from '@/lib/client-logger'
+import { GatewayEmptyState, useGatewayRequired } from '@/components/ui/gateway-empty-state'
 
 const log = createClientLogger('SessionDetails')
 
 export function SessionDetailsPanel() {
+  const gatewayRequired = useGatewayRequired()
   const { 
     sessions, 
     selectedSession, 
@@ -133,6 +135,8 @@ export function SessionDetailsPanel() {
   }
 
   const selectedSessionData = sessions.find(s => s.id === selectedSession)
+
+  if (gatewayRequired) return <GatewayEmptyState panel="Sessions" />
 
   return (
     <div className="p-6 space-y-6">

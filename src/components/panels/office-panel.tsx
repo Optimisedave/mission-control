@@ -5,6 +5,7 @@ import type { MouseEvent, WheelEvent } from 'react'
 import Image from 'next/image'
 import { useMissionControl, Agent } from '@/store'
 import { buildOfficeLayout } from '@/lib/office-layout'
+import { GatewayEmptyState, useGatewayRequired } from '@/components/ui/gateway-empty-state'
 
 type ViewMode = 'office' | 'org-chart'
 type OrgSegmentMode = 'category' | 'role' | 'status'
@@ -465,6 +466,7 @@ function pointAlongPath(path: Array<{ x: number; y: number }>, pathLengths: numb
 }
 
 export function OfficePanel() {
+  const gatewayRequired = useGatewayRequired()
   const { agents, dashboardMode, currentUser } = useMissionControl()
   const isLocalMode = dashboardMode === 'local'
   const [localAgents, setLocalAgents] = useState<Agent[]>([])
@@ -1511,6 +1513,8 @@ export function OfficePanel() {
       </div>
     )
   }
+
+  if (gatewayRequired) return <GatewayEmptyState panel="Office" description="Connect an OpenClaw gateway to see your agent team's virtual office." />
 
   return (
     <div className="p-6 space-y-4">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSmartPoll } from '@/lib/use-smart-poll'
+import { GatewayEmptyState, useGatewayRequired } from '@/components/ui/gateway-empty-state'
 
 interface Activity {
   id: number
@@ -48,6 +49,7 @@ const activityColors: Record<string, string> = {
 }
 
 export function ActivityFeedPanel() {
+  const gatewayRequired = useGatewayRequired()
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -131,6 +133,8 @@ export function ActivityFeedPanel() {
   // Get unique activity types for filter
   const activityTypes = Array.from(new Set(activities.map(a => a.type))).sort()
   const actors = Array.from(new Set(activities.map(a => a.actor))).sort()
+
+  if (gatewayRequired) return <GatewayEmptyState panel="Activity" description="Connect an OpenClaw gateway to see the live activity feed." />
 
   return (
     <div className="h-full flex flex-col">

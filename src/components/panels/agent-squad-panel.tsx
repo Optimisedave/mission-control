@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClientLogger } from '@/lib/client-logger'
+import { GatewayEmptyState, useGatewayRequired } from '@/components/ui/gateway-empty-state'
 
 const log = createClientLogger('AgentSquadPanel')
 
@@ -40,6 +41,7 @@ const statusIcons: Record<string, string> = {
 }
 
 export function AgentSquadPanel() {
+  const gatewayRequired = useGatewayRequired()
   const [agents, setAgents] = useState<Agent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -143,6 +145,8 @@ export function AgentSquadPanel() {
       </div>
     )
   }
+
+  if (gatewayRequired) return <GatewayEmptyState panel="Agents" />
 
   return (
     <div className="h-full flex flex-col bg-gray-900">

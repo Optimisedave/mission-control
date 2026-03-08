@@ -18,7 +18,7 @@ export interface BoardTask {
   title: string
   description?: string
   epic?: string           // High-level grouping label, e.g. "Pipeline Hardening"
-  column: 'backlog' | 'desk' | 'done'
+  column: 'backlog' | 'desk' | 'ongoing' | 'done'
   priority: 'critical' | 'high' | 'medium' | 'low'
   source: 'roy' | 'dave'
   createdAt: string

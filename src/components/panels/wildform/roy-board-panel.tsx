@@ -177,7 +177,7 @@ function TaskCard({ task, onDelete, isDragging, onDragStart }: TaskCardProps) {
 // ---- column config ----
 
 interface ColumnConfig {
-  id: 'backlog' | 'desk' | 'done'
+  id: 'backlog' | 'desk' | 'ongoing' | 'done'
   label: string
   headerClass: string
   dotClass: string
@@ -185,9 +185,10 @@ interface ColumnConfig {
 }
 
 const COLUMNS: ColumnConfig[] = [
-  { id: 'backlog', label: 'Backlog',     headerClass: 'text-muted-foreground', dotClass: 'bg-slate-500',  canAdd: true },
-  { id: 'desk',    label: "Roy's Desk",  headerClass: 'text-amber-400',        dotClass: 'bg-amber-400',  canAdd: true },
-  { id: 'done',    label: 'Done',        headerClass: 'text-green-400',        dotClass: 'bg-green-500',  canAdd: false },
+  { id: 'backlog',  label: 'Backlog',     headerClass: 'text-muted-foreground', dotClass: 'bg-slate-500',  canAdd: true },
+  { id: 'desk',     label: "Roy's Desk",  headerClass: 'text-amber-400',        dotClass: 'bg-amber-400',  canAdd: true },
+  { id: 'ongoing',  label: 'Ongoing',     headerClass: 'text-sky-400',          dotClass: 'bg-sky-500',    canAdd: true },
+  { id: 'done',     label: 'Done',        headerClass: 'text-green-400',        dotClass: 'bg-green-500',  canAdd: false },
 ]
 
 // ---- main panel ----
@@ -238,7 +239,7 @@ export function RoyBoardPanel() {
     } catch {}
   }
 
-  async function handleMove(id: string, column: 'backlog' | 'desk' | 'done') {
+  async function handleMove(id: string, column: 'backlog' | 'desk' | 'ongoing' | 'done') {
     try {
       const res = await fetch('/api/wildform/board', {
         method: 'PUT',
@@ -262,7 +263,7 @@ export function RoyBoardPanel() {
     setDragOverCol(colId)
   }
 
-  function onDrop(e: React.DragEvent, colId: 'backlog' | 'desk' | 'done') {
+  function onDrop(e: React.DragEvent, colId: 'backlog' | 'desk' | 'ongoing' | 'done') {
     e.preventDefault()
     if (draggedId) {
       const task = tasks.find(t => t.id === draggedId)
@@ -308,7 +309,7 @@ export function RoyBoardPanel() {
             <div
               key={col.id}
               onDragOver={e => onDragOver(e, col.id)}
-              onDrop={e => onDrop(e, col.id as 'backlog' | 'desk' | 'done')}
+              onDrop={e => onDrop(e, col.id as 'backlog' | 'desk' | 'ongoing' | 'done')}
               onDragLeave={() => setDragOverCol(null)}
               className={`flex flex-col rounded-xl border bg-secondary/20 p-3 min-h-[300px] transition-colors ${isDragTarget ? 'border-primary/50 bg-primary/5' : 'border-border'}`}
             >

@@ -17,6 +17,7 @@ export interface BoardTask {
   id: string
   title: string
   description?: string
+  epic?: string           // High-level grouping label, e.g. "Pipeline Hardening"
   column: 'backlog' | 'desk' | 'done'
   priority: 'critical' | 'high' | 'medium' | 'low'
   source: 'roy' | 'dave'
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const { title, description, column = 'backlog', priority = 'medium', source = 'dave' } = body
+  const { title, description, epic, column = 'backlog', priority = 'medium', source = 'dave' } = body
   if (!title?.trim()) return NextResponse.json({ error: 'title required' }, { status: 400 })
 
   const now = new Date().toISOString()
@@ -111,6 +112,7 @@ export async function POST(request: NextRequest) {
     id: nanoid(),
     title: title.trim(),
     description: description?.trim() || undefined,
+    epic: epic?.trim() || undefined,
     column,
     priority,
     source,

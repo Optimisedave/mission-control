@@ -11,6 +11,7 @@ import { useFocusTrap } from '@/lib/use-focus-trap'
 
 import { AgentAvatar } from '@/components/ui/agent-avatar'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
+import { GatewayEmptyState, useGatewayRequired } from '@/components/ui/gateway-empty-state'
 
 const log = createClientLogger('TaskBoard')
 
@@ -258,6 +259,7 @@ function MentionTextarea({
 }
 
 export function TaskBoardPanel() {
+  const gatewayRequired = useGatewayRequired()
   const { tasks: storeTasks, setTasks: storeSetTasks, selectedTask, setSelectedTask } = useMissionControl()
   const router = useRouter()
   const pathname = usePathname()
@@ -510,6 +512,8 @@ export function TaskBoardPanel() {
     const agent = agents.find(a => a.name === sessionKey)
     return agent?.name || sessionKey || 'Unassigned'
   }
+
+  if (gatewayRequired) return <GatewayEmptyState panel="Tasks" description="Connect an OpenClaw gateway to manage tasks, projects, and agent assignments." />
 
   if (loading) {
     return (

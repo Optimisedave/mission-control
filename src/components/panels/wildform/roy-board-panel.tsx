@@ -32,10 +32,35 @@ const SOURCE_COLORS: Record<string, string> = {
   dave: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
 }
 
+// Deterministic colour from epic name (cycles through palette)
+const EPIC_PALETTE = [
+  'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+  'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  'bg-sky-500/20 text-sky-400 border-sky-500/30',
+  'bg-pink-500/20 text-pink-400 border-pink-500/30',
+  'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
+  'bg-teal-500/20 text-teal-400 border-teal-500/30',
+]
+
+function epicColor(name: string): string {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0
+  return EPIC_PALETTE[hash % EPIC_PALETTE.length]
+}
+
 // ---- sub-components ----
 
+const KNOWN_EPICS = [
+  'Outreach Operations',
+  'Activity-Signal Targeting',
+  'Pipeline Hardening',
+  'CRM Health',
+  'Mission Control',
+  'ConditionRegister',
+]
+
 interface AddFormProps {
-  onAdd: (data: { title: string; description?: string; priority: string }) => void
+  onAdd: (data: { title: string; description?: string; priority: string; epic?: string }) => void
   onCancel: () => void
 }
 
@@ -43,11 +68,12 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
   const [title, setTitle] = useState('')
   const [desc, setDesc] = useState('')
   const [priority, setPriority] = useState('medium')
+  const [epic, setEpic] = useState('')
 
   function submit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
-    onAdd({ title: title.trim(), description: desc.trim() || undefined, priority })
+    onAdd({ title: title.trim(), description: desc.trim() || undefined, priority, epic: epic.trim() || undefined })
   }
 
   return (
@@ -65,6 +91,14 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
         placeholder="Description (optional)"
         className="w-full text-sm bg-transparent border border-border rounded px-2 py-1.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
       />
+      <select
+        value={epic}
+        onChange={e => setEpic(e.target.value)}
+        className="w-full text-sm bg-card border border-border rounded px-2 py-1.5 text-foreground focus:outline-none focus:border-primary"
+      >
+        <option value="">No epic</option>
+        {KNOWN_EPICS.map(e => <option key={e} value={e}>{e}</option>)}
+      </select>
       <select
         value={priority}
         onChange={e => setPriority(e.target.value)}
@@ -114,6 +148,12 @@ function TaskCard({ task, onDelete, isDragging, onDragStart }: TaskCardProps) {
 
       {task.description && (
         <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
+      )}
+
+      {task.epic && (
+        <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded border font-medium truncate max-w-full ${epicColor(task.epic)}`}>
+          {task.epic}
+        </span>
       )}
 
       <div className="flex items-center gap-1.5 flex-wrap">
@@ -176,7 +216,7 @@ export function RoyBoardPanel() {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [])
 
-  async function handleAdd(column: string, data: { title: string; description?: string; priority: string }) {
+  async function handleAdd(column: string, data: { title: string; description?: string; priority: string; epic?: string }) {
     try {
       const res = await fetch('/api/wildform/board', {
         method: 'POST',

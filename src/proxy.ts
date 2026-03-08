@@ -2,6 +2,27 @@ import crypto from 'node:crypto'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+// ---------------------------------------------------------------------------
+// Upstash Redis helper (edge-safe, REST API)
+// ---------------------------------------------------------------------------
+const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
+
+async function redisGetSession(token: string): Promise<string | null> {
+  if (!REDIS_URL || !REDIS_TOKEN) return null
+  try {
+    const res = await fetch(`${REDIS_URL}/get/${encodeURIComponent(`session:${token}`)}`, {
+      headers: { Authorization: `Bearer ${REDIS_TOKEN}` },
+      cache: 'no-store',
+    })
+    if (!res.ok) return null
+    const json = await res.json() as { result: string | null }
+    return json.result
+  } catch {
+    return null
+  }
+}
+
 /** Constant-time string comparison using Node.js crypto. */
 function safeCompare(a: string, b: string): boolean {
   if (typeof a !== 'string' || typeof b !== 'string') return false
@@ -68,7 +89,7 @@ function extractApiKeyFromRequest(request: NextRequest): string {
   return ''
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Network access control.
   // In production: default-deny unless explicitly allowed.
   // In dev/test: allow all hosts unless overridden.
@@ -116,6 +137,45 @@ export function proxy(request: NextRequest) {
   // Check for session cookie
   const sessionToken = request.cookies.get('mc-session')?.value
 
+  // ---------------------------------------------------------------------------
+  // Redis session validation + x-mc-redis-user injection
+  // Validate the session against Redis and inject the user data as a request
+  // header. This fixes the cold-start sign-out bug: route handlers read
+  // x-mc-redis-user instead of hitting an empty SQLite DB on Vercel cold starts.
+  // ---------------------------------------------------------------------------
+  if (sessionToken) {
+    const raw = await redisGetSession(sessionToken)
+    if (raw) {
+      try {
+        const session = JSON.parse(raw) as {
+          userId: number
+          workspaceId: number
+          expiresAt: number
+          user?: unknown
+        }
+        const now = Math.floor(Date.now() / 1000)
+        if (session.expiresAt > now) {
+          const requestHeaders = new Headers(request.headers)
+          requestHeaders.set(
+            'x-mc-redis-user',
+            JSON.stringify({
+              userId: session.userId,
+              workspaceId: session.workspaceId,
+              token: sessionToken,
+              user: session.user ?? null,
+            }),
+          )
+          return applySecurityHeaders(NextResponse.next({ request: { headers: requestHeaders } }))
+        }
+        // Session expired in Redis — treat as no session.
+      } catch {
+        // Malformed session data — fall through.
+      }
+    }
+    // Redis miss or expired: fall through to per-path logic below.
+    // Route handlers using requireRoleAsync will still validate via Redis directly.
+  }
+
   // API routes: accept session cookie OR API key
   if (pathname.startsWith('/api/')) {
     const configuredApiKey = (process.env.API_KEY || '').trim()
@@ -133,6 +193,7 @@ export function proxy(request: NextRequest) {
 
   // Page routes: redirect to login if no session
   if (sessionToken) {
+    // Cookie present but Redis miss — allow through; route handler handles final auth.
     return applySecurityHeaders(NextResponse.next())
   }
 

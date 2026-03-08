@@ -799,6 +799,31 @@ const migrations: Migration[] = [
     }
   },
   {
+    id: '028_crm_snapshots',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS crm_snapshots (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          product TEXT NOT NULL,
+          source TEXT NOT NULL,
+          status_counts TEXT NOT NULL DEFAULT '{}',
+          sent_today INTEGER NOT NULL DEFAULT 0,
+          sent_week INTEGER NOT NULL DEFAULT 0,
+          queued_count INTEGER NOT NULL DEFAULT 0,
+          new_count INTEGER NOT NULL DEFAULT 0,
+          replied_count INTEGER NOT NULL DEFAULT 0,
+          bounce_count INTEGER NOT NULL DEFAULT 0,
+          dnc_count INTEGER NOT NULL DEFAULT 0,
+          daily_cap INTEGER NOT NULL DEFAULT 20,
+          snapshot_at INTEGER NOT NULL DEFAULT (unixepoch()),
+          created_at INTEGER NOT NULL DEFAULT (unixepoch())
+        );
+        CREATE INDEX IF NOT EXISTS idx_crm_snapshots_product ON crm_snapshots(product, snapshot_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_crm_snapshots_created_at ON crm_snapshots(created_at);
+      `)
+    }
+  },
+  {
     id: '027_agent_api_keys',
     up: (db) => {
       const hasAgents = db

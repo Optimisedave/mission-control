@@ -22,9 +22,9 @@ const navGroups: NavGroup[] = [
   {
     id: 'core',
     items: [
-      { id: 'overview', label: 'Overview', icon: <OverviewIcon />, priority: true },
-      { id: 'agents', label: 'Agents', icon: <AgentsIcon />, priority: true, requiresGateway: true },
+      { id: 'pipeline', label: 'Pipeline', icon: <TasksIcon />, priority: true },
       { id: 'tasks', label: 'Tasks', icon: <TasksIcon />, priority: true },
+      { id: 'agents', label: 'Agents', icon: <AgentsIcon />, priority: false, requiresGateway: true },
       { id: 'sessions', label: 'Sessions', icon: <SessionsIcon />, priority: false },
       { id: 'office', label: 'Office', icon: <OfficeIcon />, priority: false },
       { id: 'documents', label: 'Documents', icon: <DocumentsIcon />, priority: false },
@@ -36,7 +36,7 @@ const navGroups: NavGroup[] = [
     items: [
       { id: 'activity', label: 'Activity', icon: <ActivityIcon />, priority: true },
       { id: 'logs', label: 'Logs', icon: <LogsIcon />, priority: false },
-      { id: 'tokens', label: 'Tokens', icon: <TokensIcon />, priority: false },
+      // { id: 'tokens', label: 'Tokens', icon: <TokensIcon />, priority: false }, // hidden — data not accurate yet; re-enable when wired to gateway
       { id: 'agent-costs', label: 'Agent Costs', icon: <AgentCostsIcon />, priority: false },
       { id: 'memory', label: 'Memory', icon: <MemoryIcon />, priority: false },
     ],
@@ -50,6 +50,13 @@ const navGroups: NavGroup[] = [
       { id: 'webhooks', label: 'Webhooks', icon: <WebhookIcon />, priority: false },
       { id: 'alerts', label: 'Alerts', icon: <AlertIcon />, priority: false },
       { id: 'github', label: 'GitHub', icon: <GitHubIcon />, priority: false },
+    ],
+  },
+  {
+    id: 'wildform',
+    label: 'WILDFORM',
+    items: [
+      { id: 'roy-board', label: "Roy's Board", icon: <KanbanIcon />, priority: false },
     ],
   },
   {
@@ -645,6 +652,16 @@ function DocumentsIcon() {
       <path d="M3 1.5h7l3 3V14a1 1 0 01-1 1H3a1 1 0 01-1-1V2.5a1 1 0 011-1z" />
       <path d="M10 1.5V5h3" />
       <path d="M5 8h6M5 10.5h6M5 13h4" />
+    </svg>
+  )
+}
+
+function KanbanIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="1" width="4" height="14" rx="1" />
+      <rect x="6" y="1" width="4" height="9" rx="1" />
+      <rect x="11" y="1" width="4" height="6" rx="1" />
     </svg>
   )
 }

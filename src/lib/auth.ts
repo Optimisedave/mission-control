@@ -580,3 +580,35 @@ function parseCookie(cookieHeader: string, name: string): string | null {
   const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`))
   return match ? decodeURIComponent(match[1]) : null
 }
+
+/**
+ * Async version of getUserFromRequest — checks Redis directly when x-mc-redis-user header
+ * is absent. Use in async route handlers where the proxy may not have injected the header.
+ */
+export async function getUserFromRequestAsync(request: Request): Promise<User | null> {
+  // Fast path: proxy already validated and injected the header
+  const user = getUserFromRequest(request)
+  if (user) return user
+
+  // Slow path: validate cookie directly against Redis (cold start / proxy miss)
+  const cookieHeader = request.headers.get('cookie') || ''
+  const sessionToken = parseCookie(cookieHeader, 'mc-session')
+  if (!sessionToken) return null
+
+  return validateSessionAsync(sessionToken)
+}
+
+/**
+ * Async version of requireRole — uses getUserFromRequestAsync for cold-start safety.
+ */
+export async function requireRoleAsync(
+  request: Request,
+  minRole: User['role']
+): Promise<{ user: User; error?: never; status?: never } | { user?: never; error: string; status: 401 | 403 }> {
+  const user = await getUserFromRequestAsync(request)
+  if (!user) return { error: 'Authentication required', status: 401 }
+  if ((ROLE_LEVELS[user.role] ?? -1) < ROLE_LEVELS[minRole]) {
+    return { error: `Requires ${minRole} role or higher`, status: 403 }
+  }
+  return { user }
+}

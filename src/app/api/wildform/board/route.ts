@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { requireRole } from '@/lib/auth'
+import { requireRole, requireRoleAsync } from '@/lib/auth'
 
 // ---- types ----
 
@@ -73,22 +73,20 @@ function nanoid(len = 21): string {
 
 // ---- auth helper ----
 
-function checkAuth(request: NextRequest): boolean {
+async function checkAuth(request: NextRequest): Promise<boolean> {
   // Accept x-api-key header
   const apiKey = request.headers.get('x-api-key')
   if (apiKey && apiKey === process.env.MC_API_KEY) return true
 
-  // Fallback to session cookie
-  const auth = requireRole(request, 'viewer')
-  if (!('error' in auth)) return true
-
-  return false
+  // Fallback to session cookie (async Redis-backed for cold-start safety)
+  const auth = await requireRoleAsync(request, 'viewer')
+  return !('error' in auth)
 }
 
 // ---- handlers ----
 
 export async function GET(request: NextRequest) {
-  if (!checkAuth(request)) {
+  if (!await checkAuth(request)) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   }
   const board = await boardGet()
@@ -96,7 +94,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!checkAuth(request)) {
+  if (!await checkAuth(request)) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   }
 
@@ -130,7 +128,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  if (!checkAuth(request)) {
+  if (!await checkAuth(request)) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   }
 
@@ -163,7 +161,7 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!checkAuth(request)) {
+  if (!await checkAuth(request)) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   }
 

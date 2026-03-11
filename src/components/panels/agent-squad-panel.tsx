@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Button } from '@/components/ui/button'
-import { Loader } from '@/components/ui/loader'
 import { createClientLogger } from '@/lib/client-logger'
+import { GatewayEmptyState, useGatewayRequired } from '@/components/ui/gateway-empty-state'
 
 const log = createClientLogger('AgentSquadPanel')
 
@@ -42,6 +41,7 @@ const statusIcons: Record<string, string> = {
 }
 
 export function AgentSquadPanel() {
+  const gatewayRequired = useGatewayRequired()
   const [agents, setAgents] = useState<Agent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -138,8 +138,15 @@ export function AgentSquadPanel() {
   }, {} as Record<string, number>)
 
   if (loading && agents.length === 0) {
-    return <Loader variant="panel" label="Loading agents" />
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <span className="ml-2 text-gray-400">Loading agents...</span>
+      </div>
+    )
   }
+
+  if (gatewayRequired) return <GatewayEmptyState panel="Agents" />
 
   return (
     <div className="h-full flex flex-col bg-gray-900">
@@ -160,24 +167,28 @@ export function AgentSquadPanel() {
         </div>
         
         <div className="flex gap-2">
-          <Button
+          <button
             onClick={() => setAutoRefresh(!autoRefresh)}
-            variant={autoRefresh ? 'success' : 'secondary'}
-            size="sm"
+            className={`px-3 py-1 text-sm rounded transition-colors ${
+              autoRefresh 
+                ? 'bg-green-600 text-white hover:bg-green-700' 
+                : 'bg-gray-600 text-white hover:bg-gray-700'
+            }`}
           >
             {autoRefresh ? 'Live' : 'Manual'}
-          </Button>
-          <Button
+          </button>
+          <button
             onClick={() => setShowCreateModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
           >
             + Add Agent
-          </Button>
-          <Button
+          </button>
+          <button
             onClick={fetchAgents}
-            variant="secondary"
+            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
           >
             Refresh
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -185,14 +196,12 @@ export function AgentSquadPanel() {
       {error && (
         <div className="bg-red-900/20 border border-red-500 text-red-400 p-3 m-4 rounded">
           {error}
-          <Button
+          <button
             onClick={() => setError(null)}
-            variant="ghost"
-            size="icon-sm"
             className="float-right text-red-300 hover:text-red-100"
           >
             ×
-          </Button>
+          </button>
         </div>
       )}
 
@@ -260,41 +269,36 @@ export function AgentSquadPanel() {
 
                 {/* Quick Actions */}
                 <div className="flex gap-1">
-                  <Button
+                  <button
                     onClick={(e) => {
                       e.stopPropagation()
                       updateAgentStatus(agent.name, 'idle', 'Manually activated')
                     }}
                     disabled={agent.status === 'idle'}
-                    variant="success"
-                    size="xs"
-                    className="flex-1"
+                    className="flex-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     Wake
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     onClick={(e) => {
                       e.stopPropagation()
                       updateAgentStatus(agent.name, 'busy', 'Manually set to busy')
                     }}
                     disabled={agent.status === 'busy'}
-                    size="xs"
-                    className="flex-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/30"
+                    className="flex-1 px-2 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     Busy
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     onClick={(e) => {
                       e.stopPropagation()
                       updateAgentStatus(agent.name, 'offline', 'Manually set offline')
                     }}
                     disabled={agent.status === 'offline'}
-                    variant="secondary"
-                    size="xs"
-                    className="flex-1"
+                    className="flex-1 px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     Sleep
-                  </Button>
+                  </button>
                 </div>
               </div>
             ))}
@@ -374,7 +378,7 @@ function AgentDetailModal({
             <div className="flex items-center gap-3">
               <div className={`w-4 h-4 rounded-full ${statusColors[agent.status]}`}></div>
               <span className="text-white">{agent.status}</span>
-              <Button onClick={onClose} variant="ghost" size="icon-sm" className="text-2xl">×</Button>
+              <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">×</button>
             </div>
           </div>
 
@@ -383,14 +387,17 @@ function AgentDetailModal({
             <h4 className="text-sm font-medium text-white mb-2">Status Control</h4>
             <div className="flex gap-2">
               {(['idle', 'busy', 'offline'] as const).map(status => (
-                <Button
+                <button
                   key={status}
                   onClick={() => onStatusUpdate(agent.name, status)}
-                  variant={agent.status === status ? 'default' : 'secondary'}
-                  size="sm"
+                  className={`px-3 py-1 text-sm rounded transition-colors ${
+                    agent.status === status
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-600 text-white hover:bg-gray-500'
+                  }`}
                 >
                   {statusIcons[status]} {status}
-                </Button>
+                </button>
               ))}
             </div>
           </div>
@@ -482,27 +489,26 @@ function AgentDetailModal({
           <div className="flex gap-3 mt-6">
             {editing ? (
               <>
-                <Button
+                <button
                   onClick={handleSave}
-                  className="flex-1"
+                  className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors"
                 >
                   Save Changes
-                </Button>
-                <Button
+                </button>
+                <button
                   onClick={() => setEditing(false)}
-                  variant="secondary"
-                  className="flex-1"
+                  className="flex-1 bg-gray-600 text-white py-2 rounded hover:bg-gray-700 transition-colors"
                 >
                   Cancel
-                </Button>
+                </button>
               </>
             ) : (
-              <Button
+              <button
                 onClick={() => setEditing(true)}
-                className="flex-1"
+                className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors"
               >
                 Edit Agent
-              </Button>
+              </button>
             )}
           </div>
         </div>
@@ -599,20 +605,19 @@ function CreateAgentModal({
           </div>
           
           <div className="flex gap-3 mt-6">
-            <Button
+            <button
               type="submit"
-              className="flex-1"
+              className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors"
             >
               Create Agent
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
               onClick={onClose}
-              variant="secondary"
-              className="flex-1"
+              className="flex-1 bg-gray-600 text-white py-2 rounded hover:bg-gray-700 transition-colors"
             >
               Cancel
-            </Button>
+            </button>
           </div>
         </form>
       </div>
